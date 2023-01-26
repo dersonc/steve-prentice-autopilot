@@ -1,6 +1,6 @@
 # WaitForUserDeviceRegistration.ps1
 #
-# Version 1.8
+# Version 1.9
 #
 # Steve Prentice, 2020
 # Modified by Anderson Cassimiro, 2023
@@ -30,7 +30,7 @@ Set-Content -Path "$($env:ProgramData)\DeviceRegistration\WaitForUserDeviceRegis
 # Start logging
 Start-Transcript "$($env:ProgramData)\DeviceRegistration\WaitForUserDeviceRegistration\WaitForUserDeviceRegistration.log"
 
-#Check connectivity to DC
+# Check connectivity to DC
 $now = (Get-Date).ToString()
 Write-Host "$now - Testing Domain Controller connectivity..." -ForegroundColor Yellow
 $DCName=""
@@ -46,6 +46,14 @@ If (($DCName.length) -eq 0){
     $now = (Get-Date).ToString()
     Write-Host "$now - Test passed: connection to Domain Controller succeeded. Continue script execution." -ForegroundColor Green
 }
+
+# Start Automatic-Device-Join
+$now = (Get-Date).ToString()
+Write-Host "$now - Start Automatic-Device-Join..." -ForegroundColor Yellow
+Start-ScheduledTask "\Microsoft\Windows\Workplace Join\Automatic-Device-Join"
+$now = (Get-Date).ToString()
+Write-Host "$now - Sleeping for 10s..." -ForegroundColor Yellow
+Start-Sleep -Seconds 10
 
 $filter304 = @{
   LogName = 'Microsoft-Windows-User Device Registration/Admin'
