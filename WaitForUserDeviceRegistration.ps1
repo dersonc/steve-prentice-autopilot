@@ -1,6 +1,6 @@
 # WaitForUserDeviceRegistration.ps1
 #
-# Version 1.9
+# Version 2.0
 #
 # Steve Prentice, 2020
 # Modified by Anderson Cassimiro, 2023
@@ -33,10 +33,10 @@ Start-Transcript "$($env:ProgramData)\DeviceRegistration\WaitForUserDeviceRegist
 # Check connectivity to DC
 $now = (Get-Date).ToString()
 Write-Host "$now - Testing Domain Controller connectivity..." -ForegroundColor Yellow
-$DCName=""
-$DCTest=nltest /dsgetdc:
+$DCName = ""
+$DCTest = C:\Windows\system32\nltest.exe /dsgetdc:
 $DCName = $DCTest | Select-String DC | Select-Object -first 1
-$DCName =($DCName.tostring() -split "DC: \\")[1].trim()
+$DCName = ($DCName.tostring() -split "DC: \\")[1].trim()
 If (($DCName.length) -eq 0){
     $now = (Get-Date).ToString()
     Write-Host "$now - Test failed: connection to Domain Controller failed. Exit." -ForegroundColor Red
