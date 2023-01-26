@@ -1,9 +1,9 @@
 # WaitForUserDeviceRegistration.ps1
 #
-# Version 1.7
+# Version 1.8
 #
 # Steve Prentice, 2020
-# Modified by Anderson Cassimiro, 2022
+# Modified by Anderson Cassimiro, 2023
 #
 # Used to pause device ESP during Autopilot Hybrid Join to wait for
 # the device to sucesfully register into AzureAD before continuing.
@@ -17,7 +17,8 @@
 #
 # Exits with return code 0 to indicate script completed.
 #
-# NOTE: Modify $domainToTest variable on line 33.
+# Using Check connectivity to DC from https://github.com/Azure-Samples/DSRegTool/blob/main/DSRegTool.ps1
+#
 
 # Create a tag file just so Intune knows this was installed
 If (-Not (Test-Path "$($env:ProgramData)\DeviceRegistration\WaitForUserDeviceRegistration"))
@@ -29,16 +30,21 @@ Set-Content -Path "$($env:ProgramData)\DeviceRegistration\WaitForUserDeviceRegis
 # Start logging
 Start-Transcript "$($env:ProgramData)\DeviceRegistration\WaitForUserDeviceRegistration\WaitForUserDeviceRegistration.log"
 
-#Check domain connectivity
-$domainToTest = 'corp.contoso.com'
-$connectedToDomain = Test-Connection $domainToTest -quiet
-$now = Get-UniversalDate
-If ( $connectedToDomain ) { 
-    Write-Host "$now - Computer is connected to domain. Proceed."
-} Else { 
-    Write-Host "$now - Computer is not connected to domain. Exit."
+#Check connectivity to DC
+$now = (Get-Date).ToString()
+Write-Host "$now - Testing Domain Controller connectivity..." -ForegroundColor Yellow
+$DCName=""
+$DCTest=nltest /dsgetdc:
+$DCName = $DCTest | Select-String DC | Select-Object -first 1
+$DCName =($DCName.tostring() -split "DC: \\")[1].trim()
+If (($DCName.length) -eq 0){
+    $now = (Get-Date).ToString()
+    Write-Host "$now - Test failed: connection to Domain Controller failed. Exit." -ForegroundColor Red
     Stop-Transcript
     Exit 0
+} Else {
+    $now = (Get-Date).ToString()
+    Write-Host "$now - Test passed: connection to Domain Controller succeeded. Continue script execution." -ForegroundColor Green
 }
 
 $filter304 = @{
@@ -75,28 +81,29 @@ While (($counter++ -lt 60) -and (!$exitWhile)) {
     $events335   = Get-WinEvent -FilterHashtable $filter335   -MaxEvents 1 -EA SilentlyContinue
     $events20225 = Get-WinEvent -FilterHashtable $filter20225 -MaxEvents 1 -EA SilentlyContinue
 
-    $now = Get-UniversalDate
+    $now = (Get-Date).ToString()
     
     If ($events335) { $exitWhile = "True" }
 
     ElseIf ($events306) { $exitWhile = "True" }
 
     ElseIf ($events20225 -And $events334 -And !$events304) {
-        Write-Host "$now - RRAS dialled sucesfully. Trying Automatic-Device-Join task to create userCertificate attribute on computer object..."
+        Write-Host "$now - RRAS dialled sucesfully. Trying Automatic-Device-Join task to create userCertificate attribute on computer object..." -ForegroundColor Yellow
         Start-ScheduledTask "\Microsoft\Windows\Workplace Join\Automatic-Device-Join"
-        Write-Host "$now - Sleeping for 60s..."
+        Write-Host "$now - Sleeping for 60s..." -ForegroundColor Yellow
         Start-Sleep -Seconds 60
     }
 
     Else {
-        Write-Host "$now - No events indicating successful device registration with Azure AD."
-        Write-Host "$now - Sleeping for 60s..."
+        Write-Host "$now - No events indicating successful device registration with Azure AD." -ForegroundColor Yellow
+        Write-Host "$now - Sleeping for 60s..." -ForegroundColor Yellow
         Start-Sleep -Seconds 60
         If ($events304) {
-            $now = Get-UniversalDate
-            Write-Host "$now - Trying Automatic-Device-Join task again..."
+            $now = (Get-Date).ToString()
+            Write-Host "$now - Trying Automatic-Device-Join task again..." -ForegroundColor Yellow
             Start-ScheduledTask "\Microsoft\Windows\Workplace Join\Automatic-Device-Join"
-            Write-Host "$now - Sleeping for 5s..."
+            $now = (Get-Date).ToString()
+            Write-Host "$now - Sleeping for 5s..." -ForegroundColor Yellow
             Start-Sleep -Seconds 5
         }
     }
@@ -104,15 +111,15 @@ While (($counter++ -lt 60) -and (!$exitWhile)) {
 
 If ($events306) { 
     Write-Host $events306.Message
-    $now = Get-UniversalDate
-    Write-Host "$now - Exiting with return code 0 to indicate that the script completed."
+    $now = (Get-Date).ToString()
+    Write-Host "$now - Exiting with return code 0 to indicate that the script completed." -ForegroundColor Green
     Stop-Transcript
     Exit 0
 }
 
 If ($events335) { Write-Host $events335.Message }
 
-$now = Get-UniversalDate
-Write-Host "$now - Script complete, exiting."
+$now = (Get-Date).ToString()
+Write-Host "$now - Script complete, exiting." -ForegroundColor Green
 
 Stop-Transcript
