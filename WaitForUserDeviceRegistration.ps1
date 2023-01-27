@@ -19,6 +19,16 @@
 #
 # Using Check connectivity to DC from https://github.com/Azure-Samples/DSRegTool/blob/main/DSRegTool.ps1
 #
+# ------------- DISCLAIMER -------------------------------------------------
+# This script code is provided as is with no guarantee or waranty concerning
+# the usability or impact on systems and may be used, distributed, and
+# modified in any way provided the parties agree and acknowledge the 
+# Microsoft or Microsoft Partners have neither accountabilty or 
+# responsibility for results produced by use of this script.
+#
+# Microsoft will not provide any support through any means.
+# ------------- DISCLAIMER -------------------------------------------------
+#
 
 # Create a tag file just so Intune knows this was installed
 If (-Not (Test-Path "$($env:ProgramData)\DeviceRegistration\WaitForUserDeviceRegistration"))
@@ -34,7 +44,7 @@ Start-Transcript "$($env:ProgramData)\DeviceRegistration\WaitForUserDeviceRegist
 $now = (Get-Date).ToString()
 Write-Host "$now - Testing Domain Controller connectivity..." -ForegroundColor Yellow
 $DCName = ""
-$DCTest = C:\Windows\system32\nltest.exe /dsgetdc:
+$DCTest = C:\Windows\sysnative\nltest.exe /dsgetdc:
 $DCName = $DCTest | Select-String DC | Select-Object -first 1
 $DCName = ($DCName.tostring() -split "DC: \\")[1].trim()
 If (($DCName.length) -eq 0){
